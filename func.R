@@ -221,7 +221,7 @@ sim.PARX <- function(N,theta,p,q,x,fun_x,seed=123,all.out=F){
     }
   }else{
     for(t in (1+lag_max):N){
-      lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t]
+      lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t],0)
       set.seed(seed=seed+t)
       y[t] <- rpois(1,lambda[t])
     }
@@ -598,7 +598,8 @@ summary.avg_mle <- function(N,optim.out,repam=NULL,par.names=NULL,...){
   if(!is.null(repam)){
     out.par <- repam(par,...)
     J <- jacobian(repam,par,...)
-    cov <- t(J)%*%solve(hessian)%*%J
+    inv_hessian <- chol2inv(chol(hessian))
+    cov <- t(J)%*%inv_hessian%*%J
   } else {
     out.par <- par
     cov <- solve(hessian)
@@ -614,9 +615,9 @@ summary.avg_mle <- function(N,optim.out,repam=NULL,par.names=NULL,...){
   #     out <- rbind("Parameter estimates"=out.par,std,t.values,p.values,std.robust,t.robust,p.robust)
   #   }
   #   else out <- rbind("Parameter estimates"=out.par,std,t.values,p.values)
-  par.table <- rbind("Parameter estimates"=out.par,std,t.values,p.values)
+  par.table <- rbind("Est."=out.par,std,t.values,p.values)
   k <- length(par)
-  log_like <- optim.out$value*N
+  log_like <- -optim.out$value*N
   aic <- 2*k - 2*log_like
   bic <- k*log(N) - 2*log_like
   hq <- 2*k*log(log(N)) - 2*log_like
@@ -689,8 +690,8 @@ kupiec <- function(N,n,delta){
   uncon_cov <- n/N
   LR <- 2*(n*log(n/N) + (N-n)*log(1-n/N) - n*log(delta) - (N-n)*log(1-delta))
   p <- 1-pchisq(LR,1)
-  out <- rbind(uncon_cov,LR,p)
-  colnames(out) <- delta
+  out <- rbind(paste0(formatC(uncon_cov*100,1,format="f"),"%"),formatC(LR,2,format="f"),formatC(p,4,format="f"))
+  colnames(out) <- paste0(formatC(delta*100,0,format="f"),"%")
   out
 }
 
