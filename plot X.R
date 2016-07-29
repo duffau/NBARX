@@ -1,14 +1,13 @@
 rm(list=ls())
-setwd("/home/christian/Dropbox/Speciale")
-source("./r_scripts/init.R")
+source("init.R")
 
 y_str <- "foreclose_sa"
-out <- readRDS(paste0("./EstOutput/",y_str,".PARX.output.RDS"))
+out <- readRDS(paste0(est_output_path,y_str,".PARX.output.RDS"))
 data <- out$data
 dates <- c(start(data$y),end(data$y))
 N <- length(data$y)
 y <- coredata(data$y)
-x_t <- data_est[,!names(data_est) %in% c("y",y_str),drop=F]
+x_t <- data[,!names(data) %in% c("y",y_str),drop=F]
 x <- coredata(x_t)
 x_names <- colnames(x)
 
@@ -18,7 +17,7 @@ PARX.filter.out <- out$filter.out
 PARX.summary.out <- out$summary.out
 PARX.filter.out <-  out$filter.out
 
-out <- readRDS(paste0("./EstOutput/",y_str,".NBARX.output.RDS"))
+out <- readRDS(paste0(est_output_path,y_str,".NBARX.output.RDS"))
 NBARX.par.list <- out$par.list
 NBARX.summary <- out$summary.out
 NBARX.filter.out <- out$filter.out
@@ -26,11 +25,11 @@ NBARX.filter.out <- out$filter.out
 # ++++++++++++++++++++++++
 # Plot exogenous variables
 # ++++++++++++++++++++++++
-for(name in setdiff(names(data_est),c("y",y_str,"constant"))){
+for(name in setdiff(names(data),c("y",y_str,"constant"))){
   # png(paste0("./plots/emp/",y_str,"_",name,".png"),w=700,h=500)
-  pdf(paste0("./plots/emp/",y_str,"_",name,".pdf"),w=w_pdf,h=h_pdf)
+  pdf(paste0(plots_path,"emp/",y_str,"_",name,".pdf"),w=w_pdf,h=h_pdf)
   par(par_plot)
-  plot.time(data_est[,name],main=name)
+  plot.time(data[,name],main=name)
   dev.off()
 }
 
@@ -49,19 +48,19 @@ print(PARX.summary)
 # Hit rate
 delta <- 1-as.numeric(names(PARX.filter.out$l.conf))
 N_forecast <- N-max(p,q)
-PARX.hit.count <- hit.count(PARX.filter.out,data_est$y)
+PARX.hit.count <- hit.count(PARX.filter.out,data$y)
 kupiec(N_forecast,PARX.hit.count,delta)
 PARX.hit.rate <- PARX.hit.count/N_forecast
 
 # Forecast plot
-pdf(paste0("./plots/emp/",y_str,"_PARX_forecast.pdf"),w=w_pdf,h=h_pdf)
+pdf(paste0(plots_path,"emp/",y_str,"_PARX_forecast.pdf"),w=w_pdf,h=h_pdf)
 par(par_plot)
-plot.time(data_est$y,
+plot.time(data$y,
           PARX.filter.out$lambda.hat,
           PARX.filter.out$l.conf[,"0.95"],
           PARX.filter.out$h.conf[,"0.95"],
-          data_est$y[coredata(data_est$y<PARX.filter.out$l.conf[,"0.95"])],
-          data_est$y[coredata(data_est$y>PARX.filter.out$h.conf[,"0.95"])],
+          data$y[coredata(data$y<PARX.filter.out$l.conf[,"0.95"])],
+          data$y[coredata(data$y>PARX.filter.out$h.conf[,"0.95"])],
           lwd=c(2,2,1,1,1,1),lty=c(1,1,2,2,0,0),col=c(col_vec[1:2],greys[6],greys[6],1,1),
           ylab=paste("Counts"),type=c("S","l","S","S","p","p"),pch=c(32,32,32,32,20,20),ylim=range(y))
 l.text <- c("Counts",expression(hat(lambda)[paste(t+1,"|",t)]),"95% Conf. bands","Outside conf. bands")
@@ -91,7 +90,7 @@ par(mar=c(2,4,1,1))
 foo_zoo <- zoo(PARX.filter.out$fx-const,order.by=time)
 rng <- c(-const,max(c(exo.comp.pos,exo.comp.neg)))
 
-pdf(paste0("./plots/emp/",y_str,"_PARX_xeffect_decomposed.pdf"),w=w_pdf,h=h_pdf)
+pdf(paste0(plots_path,"emp/",y_str,"_PARX_xeffect_decomposed.pdf"),w=w_pdf,h=h_pdf)
 par(par_plot)
 plot.time(foo_zoo,ylab="Foreclosure counts",type="n",yaxt="n",ylim=rng)
 at <- seq(rng[1],rng[2],10)
@@ -120,20 +119,19 @@ print(NBARX.summary)
 # Hit rate
 delta <- 1-as.numeric(names(NBARX.filter.out$l.conf))
 N_forecast <- N-max(p,q)
-NBARX.hit.count <- hit.count(NBARX.filter.out,data_est$y)
+NBARX.hit.count <- hit.count(NBARX.filter.out,data$y)
 kupiec(N_forecast,NBARX.hit.count,delta)
 NBARX.hit.rate <- NBARX.hit.count/N_forecast
 
 # Plot of 1-step ahead pmf-forecast
-pdf(paste0("./plots/emp/",y_str,"_NBARX_forecast.pdf"),w=w_pdf,h=h_pdf)
-# png(paste0("./plots/emp/",y_str,"_NBARX_forecast.png"),w=700,h=500)
+pdf(paste0(plots_path,"emp/",y_str,"_NBARX_forecast.pdf"),w=w_pdf,h=h_pdf)
 par(par_plot)
-plot.time(data_est$y,
+plot.time(data$y,
           NBARX.filter.out$lambda.hat,
           NBARX.filter.out$l.conf[,"0.95"],
           NBARX.filter.out$h.conf[,"0.95"],
-          data_est$y[coredata(data_est$y<NBARX.filter.out$l.conf[,"0.95"])],
-          data_est$y[coredata(data_est$y>NBARX.filter.out$h.conf[,"0.95"])],
+          data$y[coredata(data$y<NBARX.filter.out$l.conf[,"0.95"])],
+          data$y[coredata(data$y>NBARX.filter.out$h.conf[,"0.95"])],
           lwd=c(2,2,1,1,1,1),lty=c(1,1,2,2,0,0),col=c(col_vec[1:2],greys[6],greys[6],1,1),
           ylab=paste("Counts"),type=c("S","l","S","S","p","p"),pch=c(32,32,32,32,20,20),ylim=range(y))
 l.text <- c("Counts",expression(hat(lambda)[paste(t+1,"|",t)]),"95% Conf. bands","Outside conf. bands")
@@ -163,8 +161,7 @@ par(mar=c(2,4,1,1))
 foo_zoo <- zoo(NBARX.filter.out$fx-const,order.by=time)
 rng <- c(-const,max(c(exo.comp.pos,exo.comp.neg)))
 
-# png(paste0("./plots/emp/",y_str,"_NBARX_xeffect_decomposed.png"),w=700,h=500)
-pdf(paste0("./plots/emp/",y_str,"_NBARX_xeffect_decomposed.pdf"),w=w_pdf,h=h_pdf)
+pdf(paste0(plots_path,"emp/",y_str,"_NBARX_xeffect_decomposed.pdf"),w=w_pdf,h=h_pdf)
 par(par_plot)
 plot.time(foo_zoo,ylab="Foreclosure counts",type="n",yaxt="n",ylim=rng) #,startplot="2000-01-01")
 at <- seq(rng[1],rng[2],10)
@@ -191,7 +188,7 @@ dev.off()
 PARX.res.out <- pseudo_residuals.P(y,PARX.filter.out$lambda.hat)
 NBARX.res.out <- pseudo_residuals.NB(y,NBARX.filter.out$lambda.hat,NBARX.par.list$nu)
 
-pdf(paste0("./plots/emp/",y_str,"_X_qq.pdf"),w=w_pdf,h=h_pdf)
+pdf(paste0(plots_path,"emp/",y_str,"_X_qq.pdf"),w=w_pdf,h=h_pdf)
 
 qq_plot(x=PARX.res.out$res.m,type="n",pch=20,cex=0.75,conf=c("KS","Sim"),col=col_vec[1],ylim=c(-4,4))
 PARX.q.l <- qq_plot(x=PARX.res.out$res.l,plot="n")
@@ -207,7 +204,7 @@ legend(min(NBARX.q.l$q_teo),4,c("PARX","NBARX"),lwd=2,col=col_vec)
 dev.off()
 # Conditional variance
 # --------------------
-pdf(paste0("./plots/emp/",y_str,"_X_dispertion.pdf"),w=w_pdf,h=h_pdf)
+pdf(paste0(plots_path,"emp/",y_str,"_X_dispertion.pdf"),w=w_pdf,h=h_pdf)
 par(par_plot)
 par(mar=c(3,4,1,1))
 plot.time(sqrt(PARX.filter.out$lambda.hat),sqrt(NBARX.filter.out$lambda.hat+NBARX.filter.out$delta.hat),lwd=2,

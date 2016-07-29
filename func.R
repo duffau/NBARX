@@ -3,54 +3,44 @@ library(numDeriv) # For numerical derivatives. Used in Jacobian for standard err
 library(zoo) # Package for irregular time series objects
 
 # Fractional integrated process
-sim.frac.x <- function(N, d=1/4, seed=123, burn_in=100){
-  x <- rep(NA,N)
+sim.frac.x <- function(N, d=1/4,sigma2=1, seed=123, burn_in=100){
+  x <- rep(NA,N+burn_in)
   set.seed(seed)
-  z <- rnorm(N+burn_in)
-  x[1] <- z[1]
-  for(t in 2:(N+burn_in)){
-    lag <- min(t-1, 100)
-    x[t] <- z[t] - sum((-1)^(1:lag)*choose(d,1:lag)*x[(t-1):(t-lag)])
+  z <- rnorm(N+burn_in,0,sd=sqrt(sigma2))
+  psi <- c(1,choose(1:(N+burn_in-1)+d-1,1:(N+burn_in-1)))
+  for(t in 1:(N+burn_in)){
+    x[t] <- sum(z[t:1]*psi[1:t])
   }
   x[(burn_in+1):(burn_in+N)]
 }
 
 # AR process
-sim.AR.x <- function(N,rho=0.8,seed=123,burn_in=100){
+sim.AR.x <- function(N,rho=0.8,sigma2=1,seed=123,burn_in=100){
+  x <- rep(NA,N+burn_in)
   set.seed(seed)
-  z <- rnorm(N+burn_in)
-  x[1] <- z[1] + 1/(1-rho^2)
+  z <- rnorm(N+burn_in,0,sd=sqrt(sigma2))
+  x[1] <- z[1]
   for(t in 2:(N+burn_in)){
     x[t]  <- rho*x[t-1] + z[t]
   }
   x[(burn_in+1):(burn_in+N)]
 }
 
-# Link functions for exogenous varaibles
+
+
+# Link functions for exogenous variables
 # --------------------------------------
-fun_x_id <- function(x,gam){
-  x
-}
+fun_x_id <- function(x,gam) x
 
-fun_x_lin <- function(x,gam){
-  x%*%gam
-}
+fun_x_lin <- function(x,gam) x%*%gam
 
-fun_x_abs <- function(x,gam){
-  abs(x)%*%gam
-}
+fun_x_abs <- function(x,gam) abs(x)%*%gam
 
-fun_x_square <- function(x,gam){
-  (x^2)%*%gam
-}
+fun_x_square <- function(x,gam) (x^2)%*%gam
 
-fun_x_exp <- function(x,gam){
-  exp(x%*%gam)
-}
+fun_x_exp <- function(x,gam) exp(x%*%gam)
 
-fun_x_pos <- function(x,gam){
-  pmax(x%*%gam,0)
-}
+fun_x_pos <- function(x,gam) pmax(x%*%gam,0)
 
 IHS <- function(x,theta) log(theta*x+sqrt((theta*x)^2+1))/theta
 
@@ -62,10 +52,12 @@ IHS <- function(x,theta) log(theta*x+sqrt((theta*x)^2+1))/theta
 # PAR model - Fokianos, Rahbek & Tjøstheim (2009)
 # -----------------------------------------------
 PAR.par <- function(theta,p,q){
+  p_len <- length(p)
+  q_len <- length(q)
   list(
     "omega"=theta[1],
-    "alpha"=theta[2:(1+p)],
-    "beta"=theta[(2+p):(1+p+q)],
+    "alpha"=theta[2:(1+p_len)],
+    "beta"=theta[(2+p_len):(1+p_len+q_len)],
     "p"=p,
     "q"=q
     )
@@ -93,13 +85,13 @@ sim.PAR <- function(N,theta,p,q,seed=123,lambda.out=F){
   
   if(is.null(seed)){
     for(t in (1+lag_max):N){
-      lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)],0)
+      lambda[t] <- max(omega + alpha%*%y[t-p] + beta%*%lambda[t-q],0)
       y[t] <- rpois(1,lambda[t])
     }
     
   }else{
     for(t in (1+lag_max):N){
-      lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)],0)
+      lambda[t] <- max(omega + alpha%*%y[t-p] + beta%*%lambda[t-q],0)
       set.seed(seed=seed+t)
       y[t] <- rpois(1,lambda[t])
     }
@@ -139,7 +131,7 @@ loglike.PAR <- function(gamma,p,q,y,neg_par=F){
   
   for(t in (1+lag_max):N){
     # lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)]
-    lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)],0)
+    lambda[t] <- max(omega + alpha%*%y[t-p] + beta%*%lambda[t-q],0)
     llikecontr[t] <- log(max(dpois(y[t],lambda=lambda[t]),10^-8))
     #if(llikecontr[t]==-Inf) {print(c(lambda[t],llikecontr[t],t))}
   }
@@ -166,7 +158,7 @@ filter.PAR <- function(theta,p,q,y,conf=.90,zoo=F){
   lambda.hat[1:lag_max] <- y[1:lag_max]
   
   for(t in (1+lag_max):N){
-    lambda.hat[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda.hat[(t-1):(t-q)]
+    lambda.hat[t] <- omega + alpha%*%y[t-p] + beta%*%lambda.hat[t-q]
     l.conf[t,] <- qpois((1-conf)/2,lambda.hat[t])
     h.conf[t,] <- qpois(1-(1-conf)/2,lambda.hat[t])
   }
@@ -183,11 +175,13 @@ filter.PAR <- function(theta,p,q,y,conf=.90,zoo=F){
 # PARX model - Rahbek (forthcoming)
 # ---------------------------------
 PARX.par <- function(theta,p,q,k_x){
+  p_len <- length(p)
+  q_len <- length(q)
   list(
   "omega" = theta[1],
-  "alpha" = theta[2:(1+p)],
-  "beta"  = theta[(2+p):(1+p+q)],
-  "gam_x" = theta[(2+p+q):(1+p+q+k_x)],
+  "alpha" = theta[2:(1+p_len)],
+  "beta"  = theta[(2+p_len):(1+p_len+q_len)],
+  "gam_x" = theta[(2+p_len+q_len):(1+p_len+q_len+k_x)],
   "p" = p,
   "q" = q,
   "k_x" =k_x
@@ -211,7 +205,7 @@ sim.PARX <- function(N,theta,p,q,x,fun_x,seed=123,all.out=F){
 
   if(is.null(seed)){
     for(t in (1+lag_max):N){
-      par <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)]
+      par <- omega + alpha%*%y[t-p] + beta%*%lambda[t-q]
       print("----------------")
       print(paste("t =",t))
       print(paste("par =",par))
@@ -221,7 +215,7 @@ sim.PARX <- function(N,theta,p,q,x,fun_x,seed=123,all.out=F){
     }
   }else{
     for(t in (1+lag_max):N){
-      lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t],0)
+      lambda[t] <- max(omega + alpha%*%y[t-p] + beta%*%lambda[t-q] + fx[t],0)
       set.seed(seed=seed+t)
       y[t] <- rpois(1,lambda[t])
     }
@@ -230,25 +224,29 @@ sim.PARX <- function(N,theta,p,q,x,fun_x,seed=123,all.out=F){
 }
 
 repam.PARX <- function(gamma,p,q,k_x,neg_par=F){
+  p_len <- length(p)
+  q_len <- length(q)
   if(neg_par){
-    theta_par <- c(exp(gamma[1]),(1/(1+exp(-gamma[2:(1+p+q)]))-1/2)*2)
-    gam_x <- gamma[(2+p+q):(1+p+q+k_x)]
+    theta_par <- c(exp(gamma[1]),(1/(1+exp(-gamma[2:(1+p_len+q_len)]))-1/2)*2)
+    gam_x <- gamma[(2+p_len+q_len):(1+p_len+q_len+k_x)]
     c(theta_par, gam_x)
   } else {
-    theta_par <- exp(gamma[1:(1+p+q)])
-    gam_x <- gamma[(2+p+q):(1+p+q+k_x)]
+    theta_par <- exp(gamma[1:(1+p_len+q_len)])
+    gam_x <- gamma[(2+p_len+q_len):(1+p_len+q_len+k_x)]
     c(theta_par, gam_x)
   }
 } 
 
 repam.inv.PARX <- function(theta,p,q,k_x,neg_par=F){
+  p_len <- length(p)
+  q_len <- length(q)
   if(neg_par){
-    gamma_par <- c(log(theta[1]),-log(1/(theta[2:(1+p+q)]*0.5 + 0.5) - 1))
-    gam_x <- theta[(2+p+q):(1+p+q+k_x)]
+    gamma_par <- c(log(theta[1]),-log(1/(theta[2:(1+p_len+q_len)]*0.5 + 0.5) - 1))
+    gam_x <- theta[(2+p_len+q_len):(1+p_len+q_len+k_x)]
     c(gamma_par, gam_x)
   } else {
-    gamma_par <- log(theta[1:(1+p+q)])
-    gam_x <- theta[(2+p+q):(1+p+q+k_x)]
+    gamma_par <- log(theta[1:(1+p_len+q_len)])
+    gam_x <- theta[(2+p_len+q_len):(1+p_len+q_len+k_x)]
     c(gamma_par, gam_x)
   } 
 }
@@ -271,7 +269,7 @@ loglike.PARX <- function(gamma,p,q,y,x,fun_x,neg_par=F,print.par=F){
   llikecontr <- c(rep(0,lag_max),rep(NA,N-lag_max))
   
   for(t in (lag_max+1):N){
-    lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t]
+    lambda[t] <- omega + alpha%*%y[t-p] + beta%*%lambda[t-q] + fx[t]
     # print(t)
     # print(lambda[t])
     llikecontr[t] <- log(max(dpois(y[t],lambda=lambda[t]),10^-8))
@@ -302,7 +300,7 @@ filter.PARX <- function(theta,p,q,y,x,fun_x,conf=.90,zoo=F){
   lambda.hat[1:lag_max]  <- y[1:lag_max]
 
   for(t in (1+lag_max):N){
-    lambda.hat[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda.hat[(t-1):(t-q)] + fx[t] 
+    lambda.hat[t] <- omega + alpha%*%y[t-p] + beta%*%lambda.hat[t-q] + fx[t] 
     l.conf[t,] <- qpois((1-conf)/2,lambda.hat[t])
     h.conf[t,] <- qpois(1-(1-conf)/2,lambda.hat[t])
   }
@@ -319,11 +317,13 @@ filter.PARX <- function(theta,p,q,y,x,fun_x,conf=.90,zoo=F){
 # NBAR model - Christou & Fokianos (2014)
 # ---------------------------------------
 NBAR.par <- par.vec2list.NBAR <- function(theta,p,q){
+  p_len <- length(p)
+  q_len <- length(q)
   list(
   "omega" = theta[1],
-  "alpha" = theta[2:(1+p)],
-  "beta"  = theta[(2+p):(1+p+q)],
-  "nu" = theta[2+p+q],
+  "alpha" = theta[2:(1+p_len)],
+  "beta"  = theta[(2+p_len):(1+p_len+q_len)],
+  "nu" = theta[2+p_len+q_len],
   "p" = p,
   "q" = q
   )
@@ -353,12 +353,12 @@ sim.NBAR <- function(N,theta,p,q,seed=123,lambda.out=F){
   
   if(is.null(seed)){
     for(t in (1+lag_max):N){
-      lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)],0)
+      lambda[t] <- max(omega + alpha%*%y[t-p] + beta%*%lambda[t-q],0)
       y[t] <- rnbinom(1, mu=lambda[t], size=nu)
     }
   }else{
     for(t in (1+lag_max):N){
-      lambda[t] <- max(omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)],0)
+      lambda[t] <- max(omega + alpha%*%y[t-p] + beta%*%lambda[t-q],0)
       set.seed(seed=seed+t)
       y[t] <- rnbinom(1, mu=lambda[t], size=nu)
     }
@@ -399,7 +399,7 @@ loglike.NBAR <- function(gamma,p,q,y,neg_par=F){
   llikecontr <- c(rep(0,lag_max),rep(NA,N-lag_max))
   
   for(t in (lag_max+1):N){
-    lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)]
+    lambda[t] <- omega + alpha%*%y[t-p] + beta%*%lambda[t-q]
     llikecontr[t] <- log(max(dnbinom(y[t],mu=lambda[t],size=nu),10^-8))
     #if(llikecontr[t]==-Inf) {print(c(lambda[t],llikecontr[t],t))}
   }
@@ -426,7 +426,7 @@ filter.NBAR <- function(theta,p,q,y,conf=.90,zoo=F){
   lambda.hat[1:lag_max] <- y[1:lag_max]
 
   for(t in (lag_max+1):N){
-    lambda.hat[t] <-  omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda.hat[(t-1):(t-q)]
+    lambda.hat[t] <-  omega + alpha%*%y[t-p] + beta%*%lambda.hat[t-q]
     delta.hat[t] <- lambda.hat[t]^2/nu 
     l.conf[t,] <- qnbinom((1-conf)/2,mu=lambda.hat[t],size=nu)
     h.conf[t,] <- qnbinom(1-(1-conf)/2,mu=lambda.hat[t],size=nu)
@@ -448,12 +448,14 @@ filter.NBAR <- function(theta,p,q,y,conf=.90,zoo=F){
 # NBARX model
 # -----------
 NBARX.par <- function(theta,p,q,k_x){
+  p_len <- length(p)
+  q_len <- length(q)
   list(
     "omega" = theta[1],
-    "alpha" = theta[2:(1+p)],
-    "beta"  = theta[(2+p):(1+p+q)],
-    "gam_x" = theta[(2+p+q):(1+p+q+k_x)],
-    "nu" = theta[2+p+q+k_x],
+    "alpha" = theta[2:(1+p_len)],
+    "beta"  = theta[(2+p_len):(1+p_len+q_len)],
+    "gam_x" = theta[(2+p_len+q_len):(1+p_len+q_len+k_x)],
+    "nu" = theta[2+p_len+q_len+k_x],
     "p" = p,
     "q" = q,
     "k_x" = k_x
@@ -478,15 +480,15 @@ sim.NBARX <- function(N,theta,p,q,x,fun_x,seed=123,lambda.out=F){
   
   if(is.null(seed)){
     for(t in (1+lag_max):N){
-      lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t] 
-      y[t] <- rnbinom(1,mu=lambda[t],size=gam)
+      lambda[t] <- omega + alpha%*%y[t-p] + beta%*%lambda[t-q] + fx[t] 
+      y[t] <- rnbinom(1,mu=lambda[t],size=nu)
     }
     
   }else{
     for(t in (1+lag_max):N){
-      lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t] 
+      lambda[t] <- omega + alpha%*%y[t-p] + beta%*%lambda[t-q] + fx[t] 
       set.seed(seed=seed+t)
-      y[t] <- rnbinom(1,mu=lambda[t],size=gam)
+      y[t] <- rnbinom(1,mu=lambda[t],size=nu)
     }
   }
   if(lambda.out==T){cbind(y,lambda)} else {y}
@@ -494,29 +496,33 @@ sim.NBARX <- function(N,theta,p,q,x,fun_x,seed=123,lambda.out=F){
 
 
 repam.NBARX <- function(gamma,p,q,k_x,neg_par=F){
+  p_len <- length(p)
+  q_len <- length(q)
   if(neg_par){
-    theta_par <- c(exp(gamma[1]),(1/(1+exp(-gamma[2:(1+p+q)]))-1/2)*2)
-    gam_x <- gamma[(2+p+q):(1+p+q+k_x)]
-    nu <- exp(gamma[2+p+q+k_x])
+    theta_par <- c(exp(gamma[1]),(1/(1+exp(-gamma[2:(1+p_len+q_len)]))-1/2)*2)
+    gam_x <- gamma[(2+p_len+q_len):(1+p_len+q_len+k_x)]
+    nu <- exp(gamma[2+p_len+q_len+k_x])
     c(theta_par, gam_x, nu)
   } else {
-    theta_par <- exp(gamma[1:(1+p+q)])
-    gam_x <- gamma[(2+p+q):(1+p+q+k_x)]
-    nu <- exp(gamma[2+p+q+k_x])
+    theta_par <- exp(gamma[1:(1+p_len+q_len)])
+    gam_x <- gamma[(2+p_len+q_len):(1+p_len+q_len+k_x)]
+    nu <- exp(gamma[2+p_len+q_len+k_x])
     c(theta_par, gam_x, nu)
   }
 } 
 
 repam.inv.NBARX <- function(theta,p,q,k_x,neg_par=F){
+  p_len <- length(p)
+  q_len <- length(q)
   if(neg_par){
-    gamma_par <- c(log(theta[1]),-log(1/(theta[2:(1+p+q)]*0.5 + 0.5) - 1))
-    gam_x <- theta[(2+p+q):(1+p+q+k_x)]
-    nu_inv <- log(theta[2+p+q+k_x])
+    gamma_par <- c(log(theta[1]),-log(1/(theta[2:(1+p_len+q_len)]*0.5 + 0.5) - 1))
+    gam_x <- theta[(2+p_len+q_len):(1+p_len+q_len+k_x)]
+    nu_inv <- log(theta[2+p_len+q_len+k_x])
     c(gamma_par, gam_x, nu_inv)
   } else {
-    gamma_par <- log(theta[1:(1+p+q)])
-    gam_x <- theta[(2+p+q):(1+p+q+k_x)]
-    nu_inv <- log(theta[2+p+q+k_x])
+    gamma_par <- log(theta[1:(1+p_len+q_len)])
+    gam_x <- theta[(2+p_len+q_len):(1+p_len+q_len+k_x)]
+    nu_inv <- log(theta[2+p_len+q_len+k_x])
     c(gamma_par, gam_x, nu_inv)
   }
 } 
@@ -540,7 +546,7 @@ loglike.NBARX <- function(gamma,p,q,y,x,fun_x,neg_par=F,print.par=F){
   llikecontr <- c(rep(0,lag_max),rep(NA,N-lag_max))
   
   for(t in (lag_max+1):N){
-    lambda[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda[(t-1):(t-q)] + fx[t] 
+    lambda[t] <- omega + alpha%*%y[t-p] + beta%*%lambda[t-q] + fx[t] 
     llikecontr[t] <- log(max(dnbinom(y[t],mu=lambda[t],size=nu),10^-8))
     #if(llikecontr[t]==-Inf) {print(c(lambda[t],llikecontr[t],t))}
   }
@@ -571,7 +577,7 @@ filter.NBARX <- function(theta,p,q,y,x,fun_x,conf=.90,zoo=F){
   fx <- fun_x(x,gam_x)
   
   for(t in (lag_max+1):N){
-    lambda.hat[t] <- omega + alpha%*%y[(t-1):(t-p)] + beta%*%lambda.hat[(t-1):(t-q)] + fx[t]
+    lambda.hat[t] <- omega + alpha%*%y[t-p] + beta%*%lambda.hat[t-q] + fx[t]
     delta.hat[t] <- lambda.hat[t]^2/nu
     l.conf[t,] <- qnbinom((1-conf)/2,mu=lambda.hat[t],size=nu)
     h.conf[t,] <- qnbinom(1-(1-conf)/2,mu=lambda.hat[t],size=nu)
@@ -598,7 +604,8 @@ summary.avg_mle <- function(N,optim.out,repam=NULL,par.names=NULL,...){
   if(!is.null(repam)){
     out.par <- repam(par,...)
     J <- jacobian(repam,par,...)
-    inv_hessian <- chol2inv(chol(hessian))
+    # inv_hessian <- chol2inv(chol(hessian))
+    inv_hessian <- solve(hessian)
     cov <- t(J)%*%inv_hessian%*%J
   } else {
     out.par <- par
@@ -647,7 +654,106 @@ pseudo_residuals.NB <- function(y,lambda.hat,nu.hat){
   list("res.l"=res.l,"res.h"=res.h,"res.m"=res.m)
 }
 
-acf.PAR <- acf.NBAR <- acf.PARX <- acf.NBARX <- function(h,theta,p,q,data=NULL,plot=NULL,off_set=0,conf.alpha=NULL,...){
+# Autocorrelation and autocoavriance functions
+# --------------------------------------------
+
+# Autocovariance of stationary AR(1) 
+acovf.ar1 <- function(h,rho,sigma2=1){
+  rho^h/(1-rho^2)*sigma2
+}
+
+# Autocovariance of fractionally integrated process with -1/2 < d < 1/2.
+acovf.frac <- function(h,d,sigma2=1){
+  (-1)^h*gamma(1-2*d)/(gamma(1+h-d)*gamma(1-h-d))*sigma2
+}
+
+# Populate A-matrix for ARMA acf
+pop_A_matrix <- function(ar_expand, ma_expand, m){
+  
+  # Maximum number of lags plus one
+  m_1 <- m + 1
+  
+  # Empty matrix of same dimension as A. 
+  # Used for generating upper and lower triangular-matrices
+  M <- matrix(NA,m_1,m_1)
+  
+  # Two (m+1) x (m+1) matrices of zeroes to be populated.
+  A1 <- A2 <- matrix(0,m_1,m_1) 
+  
+  # Making index for populating lower an upper part of A
+  sym_count <- matrix(1:(m_1),m_1,m_1,byrow=T) + 0:m
+  id_seq_upper <- sym_count[upper.tri(M, diag = T)]
+  id_seq_lower <- sym_count[lower.tri(M, diag = F)]
+  
+  # The upper tringular part of A (including the diagonal) 
+  A1[upper.tri(M, diag = T)]  <- -ar_expand[id_seq_upper] 
+  A1 <- A1 + diag(m+1)
+  A1[1,1] <- 1
+  
+  # The lower tringular part of A (excluding the diagonal)
+  A2[lower.tri(M,diag = F)] <- -ar_expand[id_seq_lower]
+  A2[,1] <- 0
+  A2[lower.tri(M,diag = F)] <- A2[lower.tri(M,diag = F)] -ar_expand[sequence(m:1)+1] 
+  
+  # Combining the upper and lower trinagular matrices into A
+  A <- A1 + A2
+  return(A)
+}
+
+# Autocovaraince for ARMA where alpha and beta are parameter vectors
+# from a GARCH-type recusion like the PAR, NBAR, PARX or NBARX models. 
+acovf.ARMA <- function(h_vec, alpha, beta, sigma2=1){
+  
+  # Length of input vectors
+  p <- length(alpha)
+  q <- length(beta)
+  m <- max(p,q+1)  # Max. number of lags
+  m_1 <- m + 1
+  
+  # Expanding alpha and beta vectors with zeroes, to have length m.
+  a <- b <- rep(0,m)
+  a[1:p] <- alpha
+  b[1:q] <- beta
+  
+  # Calculating AR and MA parameters in ARMA-representation
+  ar <- a+b
+  ma <- -b
+  # Defining ar_0 and ma_0 as one and padding with 
+  # m+1 zeroes, to have length 1+2*(m+1)
+  ar_expand <- c(1,ar,rep(0,m_1))
+  ma_expand <- c(1,ma,rep(0,m_1)) 
+  
+  # MA-infinity coefficients with built-in R-function
+  psi <- ARMAtoMA(ar=a+b, ma=-beta, q)
+  # Defining psi_0 as one and psi_k for k>q as zero
+  psi <- c(1,psi,rep(0,m-q))
+  
+  # making right hand side vector b
+  b <- rep(NA,m_1)
+  for(i in 1:m_1) b[i] <- sum(ma_expand[i:m_1]*psi[1:(m_1-i+1)])
+  
+  # Populating A-matrix according to Brockwell et al. (1991)
+  A <- pop_A_matrix(ar_expand,ma_expand,m)
+  
+  # Solving the system of m+1 linear equations
+  auto_cov_m1 <- solve(A,b*sigma2)
+  
+  # Recursively calculating the autocovariance if h > m+1
+  if(max(h_vec) > m){
+    h_max <- max(h_vec)+1
+    auto_cov_h <- rep(NA,h_max)
+    auto_cov_h[1:m_1] <- auto_cov_m1
+    for(k in (m_1+1):h_max){
+      auto_cov_h[k] <- auto_cov_h[k-1:p] %*% ar[1:p]
+    }
+  } else {
+    auto_cov_h[h_vec+1] <- auto_cov_m1
+  }
+  return(auto_cov_h)
+}
+
+# Wrapper for calculating and plotting acf of the count time series models
+acf.PAR <- acf.NBAR <- acf.PARX <- acf.NBARX <- function(h,theta,p,q,sigma2=1,acf_type="correlation",data=NULL,plot=NULL,off_set=0,conf.alpha=NULL,...){
   if(length(h)==1){
     h_vec <- 0:h
   } else {
@@ -655,31 +761,40 @@ acf.PAR <- acf.NBAR <- acf.PARX <- acf.NBARX <- function(h,theta,p,q,data=NULL,p
     h <- max(h)
   }
   if(is.null(data)){
-    alpha <- theta[2:(p+1)]
-    beta  <- theta[(p+2):(p+q+1)]
-    lag_max <- max(p,q)
-    a <- c(alpha,rep(0,lag_max-p))
-    b <- c(beta,rep(0,lag_max-q))
-    acf <- ARMAacf(ar = a+b, ma = -beta, lag.max = h)[h_vec+1]
+    p_len <- length(p)
+    q_len <- length(q)
+    alpha <- theta[2:(p_len+1)]
+    beta  <- theta[(p_len+2):(p_len+q_len+1)]
+    acovf <- acovf.ARMA(h_vec,alpha, beta,sigma2=sigma2)
+    if(acf_type=="correlation"){
+      acf <- acovf/acovf[1]
+    } else if(acf_type=="covariance"){
+      acf <- acovf
+      print("length acf")
+      print(length(acf))
+      print("legnth h_vec")
+      print(length(h_vec))
+    } else {
+      stop(paste("type =",acf_type,"is not a valid value. Valid values are 'correlation' or 'covariance'."))
+    }
   } else {
-    acf <- acf(data,h,plot=F)$acf[h_vec+1]
+    acf <- acf(data,h,plot=F,type=acf_type)$acf[h_vec+1]
   }
   if(!is.null(plot)){
     if(plot=="new"){
       plot(h_vec+off_set,acf,...)
     } else if(plot=="add"){
       points(h_vec+off_set,acf,...)
-    } else stop(paste("plot =",plot,"is not a valid value."))
+    } else stop(paste("plot =",plot,"is not a valid value. Valid values are 'new' or 'add'."))
     if(!is.null(conf.alpha)){
       conf <- qnorm(1-conf.alpha/2)/sqrt(length(y))
       abline(h=c(conf,-conf),lty=2,col=rep(greys[4:6],each=2))
       text(max(h_vec),conf,paste(conf.alpha*100,"%"),col=greys[4:6],cex=0.8)
     }
   }else{
-   acf  
+   return(acf)  
   }
 }
-
 
 
 hit.rate <- function(filter.out,y,N) apply(coredata(y<filter.out$l.conf)+coredata(y>filter.out$h.conf),2,function(x) sum(x,na.rm=T)/N)

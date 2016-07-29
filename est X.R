@@ -1,25 +1,24 @@
 rm(list= ls())
-cat("\014")
-setwd("~/Dropbox/Speciale")
-source("./r_scripts/init.R")
+cat("\014") # Clear console
+source("init.R")
 
 # ++++++++++++
 # Loading data
 # ++++++++++++
-data <- readRDS("./data/data.RDS")
-PAR.filter <- readRDS("./EstOutput/foreclose_sa.PAR.output.RDS")$filter.out
+data <- readRDS(paste0(data_path,"data.RDS"))
+PAR.filter <- readRDS(paste0(est_output_path,"foreclose_sa.PAR.output.RDS"))$filter.out
 f <- function(x) as.yearmon(format(x, nsmall = 2), "%YM%m")
-df <- read_excel(path = "./data/dors_data/konj_data_monthly.xlsx", sheet = 1, skip=1)
+df <- read_excel(path = paste0(data_path,"dors_data/konj_data_monthly.xlsx"), sheet = 1, skip=1)
 industry <- read.zoo(df,FUN=f)$GIKI.M
 
 f <- function(x) as.yearmon(as.Date(x, origin="1899-12-30"))
-cpi <- read.zoo(read_excel(path = "./data/dors_data/mb_data.xlsx", sheet = 2),FUN=f)
-yield <- read.zoo(read_excel(path = "./data/dors_data/mb_data.xlsx", sheet = 1),FUN=f)
+cpi <- read.zoo(read_excel(path = paste0(data_path,"dors_data/mb_data.xlsx"), sheet = 2),FUN=f)
+yield <- read.zoo(read_excel(path = paste0(data_path,"dors_data/mb_data.xlsx"), sheet = 1),FUN=f)
 
 # Quarterly data
 # --------------
 f <- function(x) as.yearqtr(format(x, nsmall = 2), "%YQ%q")
-df <- read_excel(path = "./data/dors_data/konj_data_quarterly.xlsx", sheet = 1, skip=1)
+df <- read_excel(path = paste0(data_path,"dors_data/konj_data_quarterly.xlsx"), sheet = 1, skip=1)
 quarter <-read.zoo(df,FUN=f)
 
 # ++++++++++++++++++++++++++++++++++++++++++
@@ -125,17 +124,6 @@ for(i in 1:(k_x-1)){
   A[i] <- solve(t(foo_xtm1)%*%foo_xtm1,t(foo_xtm1)%*%foo_xt)[2]
 }
 
-# theta_sim <- c(1,0.45,0.52,rep(0,),5)
-# out <- sim.PARX(N=N,theta=theta_sim,p=p,q=q,x=x,fun_x=fun_x,seed=NULL,all.out=T)
-# plot(out$fx)
-# plot(out$y,ylim=c(0,max(out$y,out$fx)),type="l",col=2,lwd=3)
-# lines(out$fx,col=4,lwd=3)
-# lines(out$lambda,col=1,lwd=3)
-# gamma_sim <- repam.inv.PARX(theta_sim,p,q,k_x)
-# loglike.PARX(gamma_sim,p=p,q=q,y,x,fun_x=fun_x)
-# 
-# y <- out$y
-# data_est$y <- out$y
 
 # +++++++++++++++++++++++++++++++++++++
 # Estimate PARX model and make forecast
@@ -158,13 +146,7 @@ summary.out <- summary.avg_mle(N,out,repam.PARX,par.names=PARX.par.names,p=p,q=q
 summary.out
 
 # Checking stationarity
-s <- 1
-pow <- 4
-rho <- (sum(abs(A)**pow)**1/pow)**s
-eps <- max(0,(1-sum(par.list$beta))*(rho-par.list$alpha[1]))
 sum(par.list$beta) + sum(par.list$alpha)
-1-eps
-summary_lm
 
 # Calculating one-step ahead filter
 filter.out <- filter.PARX(theta.hat,p,q,data_est$y,x,fun_x,conf=conf_vec,zoo=T)
@@ -182,7 +164,7 @@ out_rds <- list(data=data_est,
                 filter.out=filter.out,
                 summary.out=summary.out,
                 kupiec.out=kupiec.out)
-saveRDS(out_rds,paste0("./EstOutput/foreclose_sa.PARX.output.RDS"))
+saveRDS(out_rds,paste0(est_output_path,"foreclose_sa.PARX.output.RDS"))
 
 # ++++++++++++++++++++
 # Estimate NBARX model
@@ -199,13 +181,7 @@ par.list <- NBARX.par(theta.hat,p,q,k_x)
 summary.out <- summary.avg_mle(N,out,repam.NBARX,par.names=NBARX.par.names,p=p,q=q,k_x=k_x)
 summary.out
 
-s <- 1
-pow <- 4
-rho <- (sum(abs(A)**pow)**1/pow)**s
-eps <- max(0,(1-sum(par.list$beta))*(rho-par.list$alpha[1]))
 sum(par.list$beta) + sum(par.list$alpha)
-1-eps
-summary_lm
 
 filter.out <- filter.NBARX(theta.hat,p,q,data_est$y,x,fun_x,conf=conf_vec,zoo=T)
 
@@ -222,4 +198,4 @@ out_rds <- list(data=data_est,
                 filter.out=filter.out,
                 summary.out=summary.out,
                 kupiec.out=kupiec.out)
-saveRDS(out_rds,paste0("./EstOutput/foreclose_sa.NBARX.output.RDS"))
+saveRDS(out_rds,paste0(est_output_path,"foreclose_sa.NBARX.output.RDS"))

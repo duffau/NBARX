@@ -1,6 +1,5 @@
 rm(list=ls())
-setwd("/home/christian/Dropbox/Speciale")
-source("./r_scripts/init.R")
+source("init.R")
 
 y_str_vec <- c(
   #"foreclose_sa",
@@ -19,7 +18,7 @@ for(i in 1:length(y_str_vec)){
   # =========
   # PAR plots
   # =========
-  out <- readRDS(paste0("./EstOutput/",y_str,".PAR.output.RDS"))
+  out <- readRDS(paste0(est_output_path,y_str,".PAR.output.RDS"))
   data <- out$data
   dates <- c(start(data$y),end(data$y))
   N <- length(data$y)
@@ -43,7 +42,7 @@ for(i in 1:length(y_str_vec)){
   PAR.hit.rate <- PAR.hit.count/N_forecast
   
   # Time plot
-  pdf(paste0("./plots/emp/",y_str,"_PAR_forecast.pdf"),w=w_pdf,h=h_pdf)
+  pdf(paste0(plots_path,"/emp/",y_str,"_PAR_forecast.pdf"),w=w_pdf,h=h_pdf)
   par(par_plot)
   plot.time(data$y,
             PAR.filter.out$lambda.hat,
@@ -67,7 +66,7 @@ for(i in 1:length(y_str_vec)){
   # ==========
   # NBAR plots
   # ==========
-  out <- readRDS(paste0("./EstOutput/",y_str,".NBAR.output.RDS"))
+  out <- readRDS(paste0(est_output_path,y_str,".NBAR.output.RDS"))
   data <- out$data
   dates <- c(start(data$y),end(data$y))
   N <- length(data$y)
@@ -86,7 +85,7 @@ for(i in 1:length(y_str_vec)){
   NBAR.hit.rate <- hit.rate(NBAR.filter.out,data$y,N=N-max(p,q))
   print(NBAR.hit.rate)
   
-  pdf(paste0("./plots/emp/",y_str,"_NBAR_forecast.pdf"),w=w_pdf,h=h_pdf)
+  pdf(paste0(plots_path,"emp/",y_str,"_NBAR_forecast.pdf"),w=w_pdf,h=h_pdf)
   par(par_plot)
   plot.time(data$y,
             NBAR.filter.out$lambda.hat,
@@ -113,7 +112,7 @@ for(i in 1:length(y_str_vec)){
   PAR.res.out <- pseudo_residuals.P(y,PAR.filter.out$lambda.hat)
   NBAR.res.out <- pseudo_residuals.NB(y,lambda.hat=NBAR.filter.out$lambda.hat,nu.hat=NBAR.par.list$nu)
   
-  pdf(paste0("./plots/emp/",y_str,"_y_qq.pdf"),w=w_pdf,h=h_pdf)
+  pdf(paste0(plots_path,"emp/",y_str,"_y_qq.pdf"),w=w_pdf,h=h_pdf)
   qq_plot(x=PAR.res.out$res.m,type="p",pch=20,cex=0.5,conf=c("KS","Sim"),col=col_vec[1],xlim=c(-4,4),ylim=c(-4,4))
   # PAR.q.l <- qq_plot(x=PAR.res.out$res.l,plot=F)
   # PAR.q.h <- qq_plot(x=PAR.res.out$res.h,plot=F)
@@ -137,7 +136,7 @@ for(i in 1:length(y_str_vec)){
   lwd <- 2
   ylim <- NULL
   # ylim <- c(0,1)
-  pdf(paste0("./plots/emp/",y_str,"_acf.pdf"),w=w_pdf,h=h_pdf)
+  pdf(paste0(plots_path,"emp/",y_str,"_acf.pdf"),w=w_pdf,h=h_pdf)
   par(par_plot_acf)
   acf.PAR(data=y,h=h,plot="new",type="b",lend=1,pch=20,lwd=lwd,xlab="Lags",ylab="ACF",ylim=ylim)
   acf.PAR(h,PAR.theta.hat,off_set=-0.2,type="b",lend=1,pch=20,lwd=lwd,p=PAR.par.list$p,q=PAR.par.list$q,col=col_vec[1],plot="add")

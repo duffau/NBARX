@@ -1,20 +1,6 @@
 rm(list=ls())
-setwd("/home/christian/Dropbox/Speciale")
-source("./r_scripts/init.R")
+source("init.R")
 
-
-# +++++++++
-# Load data
-# +++++++++
-
-# Load data from Yahoo Finance
-# ----------------------------
-# y_str <- "MAERSK-A.CO" #p=2, q=1
-# y_str <- "^DJI"  # Dow Jones index #p=, q=
-# y_str <- "^GSPC" # S&P500 index #p=3, q=1
-# data <- get.yahoo(symb=y_str,dates=c("2000-01-01","2016-05-30"),freq="m")
-# m <- 10^floor(log10(max(data$Volume)))/100
-# data$y <- round(data$Volume/m)
 
 # Load data from StatBank Denmark (Statistics Denmark)
 # ----------------------------------------------------
@@ -56,7 +42,7 @@ lags <- list(
 
 for(i in 1:length(y_str_vec)){
   y_str <- y_str_vec[i]
-  data <- readRDS("./data/data.RDS")
+  data <- readRDS(paste0(data_path,"data.RDS"))
   data <-  data[!is.na(data[,y_str]),]
   data$y <- data[,y_str]
   y <- coredata(data$y)
@@ -117,7 +103,7 @@ for(i in 1:length(y_str_vec)){
                   filter.out=filter.out,
                   summary.out=summary.out,
                   kupiec.out=kupiec.out)
-  saveRDS(out_rds,paste0("./EstOutput/",y_str,".PAR.output.RDS"))
+  saveRDS(out_rds,paste0(est_output_path,y_str,".PAR.output.RDS"))
   
   # Plot empirical and theoretical ACF
   h <- 50
@@ -168,6 +154,6 @@ for(i in 1:length(y_str_vec)){
                   filter.out=filter.out,
                   summary.out=summary.out,
                   kupiec.out=kupiec.out)
-  saveRDS(out_rds,paste0("./EstOutput/",y_str,".NBAR.output.RDS"))
+  saveRDS(out_rds,paste0(est_output_path,y_str,".NBAR.output.RDS"))
   
 }
