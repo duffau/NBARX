@@ -1,0 +1,33 @@
+{
+   "lang": "en",
+   "table": "dnpud",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "DATA",
+         "values": [
+            "ULT"
+         ]
+      },
+      {
+         "code": "SEKTORNAT",
+         "values": [
+            "1000",
+            "1100",
+            "1400"
+         ]
+      },
+      {
+      	 "code": "LAND",
+      	 "values":[
+      	 	"DK"
+      	 ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

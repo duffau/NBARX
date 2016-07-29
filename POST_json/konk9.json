@@ -1,0 +1,19 @@
+{
+   "lang": "en",
+   "table": "konk9",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "SÆSON",
+         "values": [
+            "EJSÆSON","SÆSON"
+         ]
+      },
+      {
+         "code": "Tid",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

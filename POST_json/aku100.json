@@ -1,0 +1,19 @@
+{
+   "lang": "en",
+   "table": "aku100",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "BESKSTATUS",
+         "values": [
+            "*"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

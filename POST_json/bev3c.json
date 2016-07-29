@@ -1,0 +1,19 @@
+{
+   "lang": "en",
+   "table": "bev3c",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "BEVÆGELSEV",
+         "values": [
+            "18","19"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

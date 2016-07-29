@@ -1,0 +1,20 @@
+{
+   "lang": "en",
+   "table": "DETA21",
+   "format": "CSV",
+   "delimiter": "Semicolon",
+   "variables": [
+      {
+         "code": "INDEKSTYPE",
+         "values": [
+            "SMAENGDE"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

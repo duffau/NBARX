@@ -1,0 +1,25 @@
+{
+   "lang": "en",
+   "table": "aus01",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "KAL",
+         "values": [
+            "TOT"
+         ]
+      },
+      {
+         "code": "PERPCT",
+         "values": [
+            "L9"
+         ]
+      },
+      {
+         "code": "Tid",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

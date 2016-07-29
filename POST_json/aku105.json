@@ -1,0 +1,25 @@
+{
+   "lang": "en",
+   "table": "aku105",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "SÆSON",
+         "values": [
+            "10"
+         ]
+      },
+      {
+         "code": "BESKSTATUS",
+         "values": [
+            "*"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

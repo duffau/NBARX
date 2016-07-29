@@ -1,0 +1,25 @@
+{
+   "lang": "en",
+   "table": "aus07",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "YD",
+         "values": [
+            "NET"
+         ]
+      },
+      {
+         "code": "SAESONFAK",
+         "values": [
+            "10"
+         ]
+      },
+      {
+         "code": "Tid",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

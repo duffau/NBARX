@@ -1,0 +1,34 @@
+{
+   "lang": "en",
+   "table": "dnsekt1",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "BALPOSTNAT1",
+         "values": [
+            "A20000",
+            "L20000"
+         ]
+      },
+      {
+         "code": "DATA",
+         "values": [
+            "8"
+         ]
+      },
+      {
+         "code": "SEKTORNAT",
+         "values": [
+            "1000",
+            "1100",
+            "1415"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

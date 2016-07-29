@@ -1,0 +1,39 @@
+{
+   "lang": "en",
+   "table": "dnpin",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "INSTRNAT",
+         "values": [
+            "PL00"
+         ]
+      },
+      {
+         "code": "DATA",
+         "values": [
+            "ULT"
+         ]
+      },
+      {
+         "code": "SEKTOR2",
+         "values": [
+            "1000",
+            "1100",
+            "1400"
+         ]
+      },
+      {
+         "code": "LAND",
+         "values": [
+            "DK"
+         ]
+      },
+      {
+         "code": "Tid",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

@@ -1,0 +1,20 @@
+{
+   "lang": "en",
+   "table": "DETA2",
+   "format": "CSV",
+   "delimiter": "Semicolon",
+   "variables": [
+      {
+         "code": "INDEKSTYPE",
+         "values": [
+            "SÆSMÆNGD"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

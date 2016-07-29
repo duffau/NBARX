@@ -1,0 +1,33 @@
+{
+   "lang": "en",
+   "table": "dnruipi",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "INSTRNAT",
+         "values": [
+            "PL00"
+         ]
+      },
+      {
+         "code": "DATA",
+         "values": [
+            "GNSB"
+         ]
+      },
+      {
+         "code": "INDSEK",
+         "values": [
+            "1000",
+            "1100",
+            "1400"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

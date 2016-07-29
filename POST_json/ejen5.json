@@ -1,0 +1,21 @@
+{
+   "lang": "en",
+   "table": "ejen5",
+   "format": "CSV",
+   "delimiter": "Semicolon",
+   "variables": [
+      {
+         "code": "EJENDOMSKATE",
+         "values": [
+            "0111",
+            "2103"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

@@ -1,0 +1,19 @@
+{
+   "lang": "en",
+   "table": "tvang1",
+   "format": "CSV",
+   "variables": [
+      {
+         "code": "TYPE",
+         "values": [
+            "5520010001","5520010101" 
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}

@@ -1,0 +1,20 @@
+{
+   "lang": "en",
+   "table": "aulaar",
+   "format": "CSV",
+   "delimiter": "Semicolon",
+   "variables": [
+      {
+         "code": "PERPCT",
+         "values": [
+            "*"
+         ]
+      },
+      {
+         "code": "TID",
+         "values": [
+            "*"
+         ]
+      }
+   ]
+}
