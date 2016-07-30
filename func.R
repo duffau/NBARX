@@ -753,7 +753,7 @@ acovf.ARMA <- function(h_vec, alpha, beta, sigma2=1){
 }
 
 # Wrapper for calculating and plotting acf of the count time series models
-acf.PAR <- acf.NBAR <- acf.PARX <- acf.NBARX <- function(h,theta,p,q,sigma2=1,acf_type="correlation",data=NULL,plot=NULL,off_set=0,conf.alpha=NULL,...){
+acf.INGAR <- acf.NBAR <- acf.PARX <- acf.NBARX <- function(h,theta,p,q,sigma2=1,acf_type="correlation",model="PAR",data=NULL,plot=NULL,off_set=0,conf.alpha=NULL,...){
   if(length(h)==1){
     h_vec <- 0:h
   } else {
@@ -761,10 +761,15 @@ acf.PAR <- acf.NBAR <- acf.PARX <- acf.NBARX <- function(h,theta,p,q,sigma2=1,ac
     h <- max(h)
   }
   if(is.null(data)){
-    p_len <- length(p)
-    q_len <- length(q)
-    alpha <- theta[2:(p_len+1)]
-    beta  <- theta[(p_len+2):(p_len+q_len+1)]
+    alpha <- rep(0,max(p))
+    beta  <- rep(0,max(q))
+    if(model=="PAR"){
+      alpha[p] <- PAR.par(theta,p,q)$alpha
+      beta[q] <- PAR.par(theta,p,q)$beta
+    } else if(model=="NBAR") {
+      alpha[p] <- NBAR.par(theta,p,q)$alpha
+      beta[q] <- NBAR.par(theta,p,q)$beta
+    } else {stop("Model type not implemented") }
     acovf <- acovf.ARMA(h_vec,alpha, beta,sigma2=sigma2)
     if(acf_type=="correlation"){
       acf <- acovf/acovf[1]

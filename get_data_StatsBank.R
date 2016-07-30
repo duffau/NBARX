@@ -3,7 +3,7 @@ library(httr)
 library(zoo)
 library(seasonal)
 source("init.R")
-setwd(data_path)
+
 f_m <- function(x) as.yearmon(format(x, nsmall = 2), "%YM%m")
 f_q <- function(x) as.yearqtr(format(x, nsmall = 2), "%YQ%q")
 f_a <- function(x) ceiling(as.numeric(as.yearmon(x)))
@@ -49,7 +49,6 @@ for(i in 1:length(jsons)){
 data <- do.call("cbind", df_list)
 head(data)
 plot(data,type="p")
-
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -128,5 +127,5 @@ data <- merge(data,divorces_sa,marriages_sa)
 
 head(data)
 plot(data,type="p",pch=20)
-write.zoo(data,file="data.csv")
-saveRDS(data,file="data.RDS")
+write.zoo(data,file=paste0(data_path,"data.csv"))
+saveRDS(data,file=paste0(data_path,"data.RDS"))

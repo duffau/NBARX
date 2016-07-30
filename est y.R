@@ -5,14 +5,14 @@ source("init.R")
 # Load data from StatBank Denmark (Statistics Denmark)
 # ----------------------------------------------------
 y_str_vec <- c(
-  #"marriages_sa", 
-  "divorces_sa",
-  #"foreclose_sa",
-  #"bankrupt_sa",
-  #"marriages", 
-  "divorces"
-  #"foreclose",
-  #"bankrupt"
+  #"marriages_sa" 
+  #"divorces_sa"
+  #"foreclose_sa"
+  #"bankrupt_sa"
+  #"marriages" 
+  #"divorces"
+  #"foreclose"
+  "bankrupt"
   )
 
 
@@ -28,20 +28,21 @@ neg_pars <- c(
 )
 
 lags <- list(
-  "marriages_sa" = list("p.PAR"=4,"q.PAR"=2,"p.NBAR"=2,"q.NBAR"=2),
-  "divorces_sa"  = list("p.PAR"=1:4,"q.PAR"=1:1,"p.NBAR"=1:4,"q.NBAR"=1:1),
-  "foreclose_sa" = list("p.PAR"=4,"q.PAR"=1,"p.NBAR"=4,"q.NBAR"=1),
-  "bankrupt_sa"  = list("p.PAR"=4,"q.PAR"=1,"p.NBAR"=4,"q.NBAR"=1),
+  "marriages_sa" = list("p.PAR"=1:2,"q.PAR"=1,"p.NBAR"=1:2,"q.NBAR"=1),
+  "divorces_sa"  = list("p.PAR"=1:3,"q.PAR"=1:2,"p.NBAR"=1:2,"q.NBAR"=1:2),
+  "foreclose_sa" = list("p.PAR"=1:2,"q.PAR"=1,"p.NBAR"=1:2,"q.NBAR"=1),
+  "bankrupt_sa"  = list("p.PAR"=1:3,"q.PAR"=1,"p.NBAR"=1:3,"q.NBAR"=1),
   
-  "marriages" = list("p.PAR"=13,"q.PAR"=2,"p.NBAR"=13,"q.NBAR"=2),
+  "marriages" = list("p.PAR"=1:13,"q.PAR"=1:2,"p.NBAR"=1:13,"q.NBAR"=1:2),
   "divorces"  = list("p.PAR"=c(1,12,13),"q.PAR"=1:2,"p.NBAR"=c(1,12,13),"q.NBAR"=1:2),
-  "foreclose" = list("p.PAR"=13,"q.PAR"=2,"p.NBAR"=13,"q.NBAR"=2),
-  "bankrupt"  = list("p.PAR"=13,"q.PAR"=2,"p.NBAR"=13,"q.NBAR"=2)
+  "foreclose" = list("p.PAR"=1:2,"q.PAR"=1,"p.NBAR"=1:2,"q.NBAR"=1),
+  "bankrupt"  = list("p.PAR"=setdiff(1:13,c(4,5)),"q.PAR"=1:2,"p.NBAR"=setdiff(1:13,c(4,5)),"q.NBAR"=1:2)
   )
 
 
 for(i in 1:length(y_str_vec)){
   y_str <- y_str_vec[i]
+  print(paste("----",y_str,"----"))
   data <- readRDS(paste0(data_path,"data.RDS"))
   data <-  data[!is.na(data[,y_str]),]
   data$y <- data[,y_str]
@@ -52,7 +53,7 @@ for(i in 1:length(y_str_vec)){
   plot.time(data$y)
   
   # Mean by month
-  plot(aggregate(data$y, by=format(time(data$y), "%m"), FUN=mean),type="h",lwd=10,lend=1)
+  #plot(aggregate(data$y, by=format(time(data$y), "%m"), FUN=mean),type="h",lwd=10,lend=1)
   
   # ++++++++++++++++++
   # Estimate PAR model
@@ -73,17 +74,17 @@ for(i in 1:length(y_str_vec)){
   
   # Minimizing negative log-likelihood
   out <- optim(par=gamma0,loglike.PAR,p=p,q=q,y=y,neg_par=neg_par,method="BFGS",hessian=T,control=list(trace=2,maxit=500,reltol=1e-8,REPORT=5))
-  summary.out <- summary.avg_mle(N,out,repam.PAR,par.names=par.names)
-  print("---- Summary PAR ----")
+  summary.out <- summary.avg_mle(N,out,repam.PAR,par.names=par.names,neg_par=neg_par)
+  print(paste("---- Summary PAR",y_str,"----"))
   print(summary.out)
   
   # Transforming parameters from reparametrized version to "regular" version
-  theta.hat <- repam.PAR(out$par)
+  theta.hat <- repam.PAR(out$par,neg_par)
   par.list <- PAR.par(theta.hat,p,q)
   print(sum(par.list$alpha)+sum(par.list$beta))
   
   filter.out <- filter.PAR(theta.hat,p,q,data$y,conf=c(0.99,0.95,.90),zoo=T)
-  plot.time(filter.out$lambda.hat,data$y)
+  plot.time(filter.out$lambda.hat,data$y,main=y_str)
   
   # Kupiec Test
   delta <- 1-as.numeric(names(filter.out$l.conf))
@@ -107,8 +108,8 @@ for(i in 1:length(y_str_vec)){
   
   # Plot empirical and theoretical ACF
   h <- 50
-  acf.PAR(h,data=y,plot="new",pch=20)
-  acf.PAR(h,theta.hat,p,q,plot="add",col=col_vec[1],pch=20)
+  acf.INGAR(h,data=y,plot="new",pch=20,main=paste("PAR",y_str))
+  acf.INGAR(h,theta.hat,p,q,model="PAR",plot="add",col=col_vec[1],pch=20)
   
   # +++++++++++++++++++
   # Estimate NBAR model
@@ -125,16 +126,16 @@ for(i in 1:length(y_str_vec)){
   loglike.NBAR(gamma0,p=p,q=q,y)
   
   out <- optim(par=gamma0,loglike.NBAR,p=p,q=q,y=y,neg_par=neg_par,method="BFGS",hessian=T,control=list(trace=2,maxit=500,reltol=1e-8,REPORT=5))
-  summary.out <- summary.avg_mle(N,out,repam.NBAR,par.names=par.names)
-  print("---- Summary NBAR ----")
+  summary.out <- summary.avg_mle(N,out,repam.NBAR,par.names=par.names,neg_par=neg_par)
+  print(paste("---- Summary NBAR -",y_str,"----"))
   print(summary.out)
   
-  theta.hat <- repam.NBAR(out$par)
+  theta.hat <- repam.NBAR(out$par,neg_par)
   par.list <- NBAR.par(theta.hat,p,q)
   print(sum(par.list$alpha)+sum(par.list$beta))
   
   filter.out <- filter.NBAR(theta.hat,p,q,data$y,conf=c(0.99,0.95,0.90),zoo=T)
-  plot.time(filter.out$lambda.hat,data$y)
+  plot.time(filter.out$lambda.hat,data$y,main=paste("NBAR",y_str))
   
   # Kupiec Test
   delta <- 1-as.numeric(names(filter.out$l.conf))
@@ -144,8 +145,8 @@ for(i in 1:length(y_str_vec)){
   print(kupiec.out)
   
   h <- 50
-  acf.PAR(h,data=y,plot="new",pch=20)
-  acf.PAR(h,theta.hat,p,q,plot="add",col=col_vec[1],pch=20)
+  acf.INGAR(h,data=y,plot="new",pch=20,main=paste("NBAR",y_str))
+  acf.INGAR(h,theta.hat,p,q,model="NBAR",plot="add",col=col_vec[1],pch=20)
   
   
   # Export parameter estimates, filtered values etc.
