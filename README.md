@@ -22,9 +22,9 @@ as a function of the exogenous variables,
 
 ## Dependencies
 ###func.R
-- `library(sfsmisc)`
-- `library(numDeriv)`
-- `library(zoo)`
+`library(sfsmisc)`...
+`library(numDeriv)`...
+`library(zoo)`
 
 ###The rest of the thesis code
 - `library(readxl)`
