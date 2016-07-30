@@ -43,6 +43,10 @@ The three functions type are:
 - likelihood functions: `loglike.PAR`, `loglike.NBAR`, `loglike.PARX` and `loglike.NBARX`
 - one step forecast filter: : `filter.PAR`, `filter.NBAR`, `filter.PARX` and `filter.NBARX`
 
+The function library also contains a function for calculating the theoretical autocovariance and 
+autocorrelation functions (ACF), based on the ARMA(X)-representation of the models. The `acf`-functions
+can also be used to calculate ACF's of GARCH and GARCH-X models.
+
 #### est y.R and est X.R
 These scripts make all the estimation on the 8 data series fetched from Statistics Denmark, and saves the
 estimated parameters, the filtered series and some test results in RDS-format (R-data single) 
