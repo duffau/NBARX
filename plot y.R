@@ -2,15 +2,20 @@ rm(list=ls())
 source("init.R")
 
 y_str_vec <- c(
-  #"foreclose_sa",
-  "marriages_sa" 
-  #"divorces_sa",
-  #"bankrupt_sa"
+  "foreclose_sa",
+  "marriages_sa", 
+  "divorces_sa",
+  "bankrupt_sa",
+  "foreclose",
+  "marriages", 
+  "divorces",
+  "bankrupt"
   )
 
-lgd_pos_vec <- c("foreclose_sa"=2,"marriages_sa"=1,"divorces_sa"=1,"bankrupt_sa"=1)
+lgd_pos_vec <- c("foreclose_sa"=2,"marriages_sa"=1,"divorces_sa"=1,"bankrupt_sa"=1,
+                 "foreclose"=2,"marriages"=1,"divorces"=1,"bankrupt"=1)
 
-i <- 1
+
 for(i in 1:length(y_str_vec)){
   y_str  <- y_str_vec[i]
   lgd_pos <- lgd_pos_vec[y_str]
@@ -138,9 +143,9 @@ for(i in 1:length(y_str_vec)){
   # ylim <- c(0,1)
   pdf(paste0(plots_path,"emp/",y_str,"_acf.pdf"),w=w_pdf,h=h_pdf)
   par(par_plot_acf)
-  acf.PAR(data=y,h=h,plot="new",type="b",lend=1,pch=20,lwd=lwd,xlab="Lags",ylab="ACF",ylim=ylim)
-  acf.PAR(h,PAR.theta.hat,off_set=-0.2,type="b",lend=1,pch=20,lwd=lwd,p=PAR.par.list$p,q=PAR.par.list$q,col=col_vec[1],plot="add")
-  acf.NBAR(h,NBAR.theta.hat,off_set=0.2,type="b",lend=1,pch=20,lwd=lwd,p=NBAR.par.list$p,q=NBAR.par.list$q,col=col_vec[2],plot="add",conf.alpha=0.05)
+  acf.INGAR(data=y,h=h,plot="new",type="b",lend=1,pch=20,lwd=lwd,xlab="Lags",ylab="ACF",ylim=ylim)
+  acf.INGAR(h,PAR.theta.hat,off_set=-0.2,type="b",model="PAR",lend=1,pch=20,lwd=lwd,p=PAR.par.list$p,q=PAR.par.list$q,col=col_vec[1],plot="add")
+  acf.INGAR(h,NBAR.theta.hat,off_set=0.2,type="b",model="PAR",lend=1,pch=20,lwd=lwd,p=NBAR.par.list$p,q=NBAR.par.list$q,col=col_vec[2],plot="add",conf.alpha=0.05)
   legend(h,1,c("Empirical","PAR","NBAR"),col=c(1,col_vec),lwd=lwd,xjust=1)
   dev.off()
   
@@ -166,8 +171,8 @@ for(i in 1:length(y_str_vec)){
   
   pdf(paste0("./plots/emp/",y_str,"_y_acf_pearson.pdf"),w=w_pdf,h=h_pdf)
   par(par_plot_acf)
-  acf.PAR(1:24,data=na.omit(coredata(PAR.pearson.res)),off_set=-0.2,plot="new",type="h",lend=1,lwd=10,ylim=c(-0.2,0.2),col=col_vec[1],xlab="Lags",ylab="ACF")
-  acf.PAR(1:24,data=na.omit(coredata(NBAR.pearson.res)),off_set=0.2,plot="add",type="h",lend=1,lwd=10,ylim=c(-0.2,0.2),col=col_vec[2],conf.alpha = c(0.01,0.05,0.1))
+  acf.INGAR(1:24,data=na.omit(coredata(PAR.pearson.res)),off_set=-0.2,plot="new",type="h",lend=1,lwd=10,ylim=c(-0.2,0.2),col=col_vec[1],xlab="Lags",ylab="ACF")
+  acf.INGAR(1:24,data=na.omit(coredata(NBAR.pearson.res)),off_set=0.2,plot="add",type="h",lend=1,lwd=10,ylim=c(-0.2,0.2),col=col_vec[2],conf.alpha = c(0.01,0.05,0.1))
   legend(24,-0.2,c("PAR","NBAR"),pch=15,col=col_vec,xjust=1,yjust=0)
   dev.off()
 }
