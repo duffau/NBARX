@@ -1,7 +1,8 @@
 # NBARX #
 
 This repository contain all the R-code used for the master thesis "Maximum likelihood estimation of a negative binomial autoregression with exogenous co-variates (NBARX) - applied to Danish foreclosures".
-The script func.R is a standalone function library containing likelihood functions, filters and more for estimating PAR, NBAR, PARX and NBARX models.
+
+The script `func.R` is a standalone function library containing likelihood functions, filters and more for estimating Poisson Autoregression (PAR), Negative Binomial Autoregression (NBAR), Poisson Autoregression with exogenous variables (PARX) and Negative Binomial Autoregression with exogenous varables (NBARX).
 
 The purely autoregressive models PAR and NBAR are fitted to the danish monthly series of,
 
@@ -21,8 +22,8 @@ as a function of the exogenous variables,
 
 
 ### Dependencies
-#### func.R
-`library(sfsmisc)`  
+#### The function library func.R
+`library(sfsmisc)`  
 `library(numDeriv)`  
 `library(zoo)`
 
